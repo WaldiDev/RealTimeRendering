@@ -1,7 +1,5 @@
 
-
-#include "Application.h"
-#include "EntryPoint.h"
+#include <RTREngine.h>
 
 class Sandbox : public rtr::Application
 {

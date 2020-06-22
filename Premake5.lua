@@ -29,7 +29,8 @@ project "RTREngine"
 
 	includedirs
 	{
-		"%{prj.name}/Source"
+		"%{prj.name}/Source",
+		"%{prj.name}/ThirdParty/Spdlog/include"
 	}
 
 	filter "system:windows"
@@ -73,7 +74,8 @@ project "Sandbox"
 
 	includedirs
 	{
-		"RTREngine/Source"
+		"RTREngine/Source",
+		"RTREngine/ThirdParty/Spdlog/include"
 	}
 
 	links

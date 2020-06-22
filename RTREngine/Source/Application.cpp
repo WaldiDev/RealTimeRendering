@@ -1,7 +1,5 @@
 #include "Application.h"
 
-#include <iostream>
-
 namespace rtr
 {
 	Application::Application()
@@ -11,6 +9,6 @@ namespace rtr
 
 	void Application::Run()
 	{
-		std::cout << "Hello World!" << std::endl;
+
 	}
 }

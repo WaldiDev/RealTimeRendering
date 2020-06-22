@@ -1,0 +1,3 @@
+[submodule "RTREngine/ThirdParty/Spdlog"]
+	path = RTREngine/ThirdParty/Spdlog
+	url = https://github.com/gabime/spdlog.git
