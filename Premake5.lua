@@ -9,7 +9,19 @@ workspace "RealTimeRendering"
 		"Shipping"
 	}
 
+	flags
+	{
+		"MultiProcessorCompile"
+	}
+
 outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
+
+-- Include directories relative to root folder (solution directory)
+IncludeDir = {}
+IncludeDir["ImGui"] = "RTREngine/ThirdParty/Imgui"
+
+group "Dependencies"
+	include "RTREngine/ThirdParty/ImGui"
 
 project "RTREngine"
 	location "RTREngine"
@@ -30,7 +42,13 @@ project "RTREngine"
 	includedirs
 	{
 		"%{prj.name}/Source",
-		"%{prj.name}/ThirdParty/Spdlog/include"
+		"%{prj.name}/ThirdParty/Spdlog/include",
+		"%{IncludeDir.ImGui}"
+	}
+
+	links
+	{
+		"ImGui"
 	}
 
 	filter "system:windows"
@@ -75,7 +93,8 @@ project "Sandbox"
 	includedirs
 	{
 		"RTREngine/Source",
-		"RTREngine/ThirdParty/Spdlog/include"
+		"RTREngine/ThirdParty/Spdlog/include",
+		"%{IncludeDir.ImGui}"
 	}
 
 	links

@@ -1,3 +1,6 @@
 [submodule "RTREngine/ThirdParty/Spdlog"]
 	path = RTREngine/ThirdParty/Spdlog
 	url = https://github.com/gabime/spdlog.git
+[submodule "RTREngine/ThirdParty/Imgui"]
+	path = RTREngine/ThirdParty/Imgui
+	url = https://github.com/TheCherno/imgui.git
