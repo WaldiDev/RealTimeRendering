@@ -25,14 +25,14 @@ namespace
 		result = D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, deviceFlags, featureLevels, 1, D3D11_SDK_VERSION, device, &usedFeatureLevel, &deviceContext);
 		if (FAILED(result))
 		{
-			RTR_ENGINE_ERROR("Unable to initialize D3D11. D3D11CreateDevice failed");
+			RTR_PRINT_RESULT_WITH_MESSAGE("Unable to initialize D3D11", result);
 			return false;
 		}
 
 		result = deviceContext->QueryInterface(IID_PPV_ARGS(deviceContext1));
 		if (FAILED(result))
 		{
-			RTR_ENGINE_ERROR("Unable to initialize D3D11. QueryInterface for DeviceContext failed");
+			RTR_PRINT_RESULT_WITH_MESSAGE("QueryInterface for DeviceContext failed", result);
 			return false;
 		}
 
@@ -73,7 +73,7 @@ namespace
 		dxgiDevice->Release();
 		if (FAILED(result))
 		{
-			RTR_ENGINE_ERROR("Unable to initialize D3D11. CreateSwapChainForHwnd failed");
+			RTR_PRINT_RESULT_WITH_MESSAGE("CreateSwapChainForHwnd failed", result);
 			return false;
 		}
 
@@ -94,7 +94,7 @@ namespace
 		backBufferTexture->Release();
 		if (FAILED(result))
 		{
-			RTR_ENGINE_ERROR("Unable to initialize D3D11. CreateBackBuffer failed");
+			RTR_PRINT_RESULT_WITH_MESSAGE("CreateRenderTargetView failed", result);
 			return false;
 		}
 
@@ -111,14 +111,14 @@ namespace
 		result = device->QueryInterface(IID_PPV_ARGS(debug));
 		if (FAILED(result))
 		{
-			RTR_ENGINE_ERROR("Unable to initialize D3D11. QueryInterface for ID3D11Debug failed");
+			RTR_PRINT_RESULT_WITH_MESSAGE("QueryInterface for ID3D11Debug failed", result);
 			return false;
 		}
 
 		result = (*debug)->QueryInterface(IID_PPV_ARGS(infoQueue));
 		if (FAILED(result))
 		{
-			RTR_ENGINE_ERROR("Unable to initialize D3D11. QueryInterface for ID3D11InfoQueue failed");
+			RTR_PRINT_RESULT_WITH_MESSAGE("QueryInterface for ID3D11InfoQueue failed", result);
 			return false;
 		}
 
@@ -163,23 +163,25 @@ namespace rtr
 	{
 		if (!::CreateDeviceAndContext(&mDevice, &mDeviceContext1))
 		{
+			assert(true);
 			return;
 		}
 
 #ifdef RTR_DEBUG
 		if (!::CreateDebugLayer(mDevice, &mDebug, &mInfoQueue))
 		{
-			return;
 		}
 #endif // RTR_DEBUG
 
 		if (!::CreateSpawnChain(mDevice, mWindow, &mSwapChain1))
 		{
+			assert(true);
 			return;
 		}
 
 		if (!::CreateBackBuffer(mDevice, mSwapChain1, &mBackBuffer))
 		{
+			assert(true);
 			return;
 		}
 	}

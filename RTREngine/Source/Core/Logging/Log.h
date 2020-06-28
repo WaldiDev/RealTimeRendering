@@ -13,6 +13,8 @@ namespace rtr
 		static std::shared_ptr<spdlog::logger>& GetEngineLogger() { return sEngineLogger; }
 		static std::shared_ptr<spdlog::logger>& GetGameLogger() { return sGameLogger; }
 
+		static std::string GetErrorMessageForResultCode(int result);
+
 	private:
 		static std::shared_ptr<spdlog::logger> sEngineLogger;
 		static std::shared_ptr<spdlog::logger> sGameLogger;
@@ -30,3 +32,6 @@ namespace rtr
 #define RTR_WARN(...)  ::rtr::Log::GetGameLogger()->warn(__VA_ARGS__)
 #define RTR_ERROR(...) ::rtr::Log::GetGameLogger()->error(__VA_ARGS__)
 #define RTR_FATAL(...) ::rtr::Log::GetGameLogger()->fatal(__VA_ARGS__)
+
+#define RTR_PRINT_RESULT(result) (result < 0) ? RTR_ENGINE_ERROR(rtr::Log::GetErrorMessageForResultCode(result)) : RTR_ENGINE_ERROR(rtr::Log::GetErrorMessageForResultCode(result))
+#define RTR_PRINT_RESULT_WITH_MESSAGE(message, result) (result < 0) ? RTR_ENGINE_ERROR("{0}:{1}", message, rtr::Log::GetErrorMessageForResultCode(result)) : RTR_ENGINE_INFO("{0}:{1}", message, rtr::Log::GetErrorMessageForResultCode(result))

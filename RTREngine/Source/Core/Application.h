@@ -36,8 +36,6 @@ namespace rtr
 
 		bool mIsRunning;
 
-
-
 		static Application* sInstance;
 	};
 
