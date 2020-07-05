@@ -2,11 +2,11 @@
 #include "Win32.h"
 
 #include "Core/Logging/Log.h"
+#include "Core/Application.h"
 
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND windowHandle, UINT message, WPARAM wParam, LPARAM lParam);
 namespace
 {
-	
 	static LRESULT CALLBACK WinWindowCallback(HWND windowHandle, UINT message, WPARAM wParam, LPARAM lParam)
 	{
 		if (ImGui_ImplWin32_WndProcHandler(windowHandle, message, wParam, lParam))
@@ -22,6 +22,18 @@ namespace
 			{
 				::PostQuitMessage(0);
 			} break;
+			case WM_SIZE:
+			{
+				const uint32_t newWidth = static_cast<uint32_t>(LOWORD(lParam));
+				const uint32_t newHeight = static_cast<uint32_t>(HIWORD(lParam));
+				const bool wasMinimized = (wParam == SIZE_MINIMIZED);
+
+				RTR_ENGINE_TRACE("WndProc WM_SIZE Width:{0} Height:{1} IsMinimized:{2}", newWidth, newHeight, wasMinimized);
+
+				rtr::Application& app = rtr::Application::Get();
+				app.Resize(newWidth, newHeight);
+
+			} break;
 			default:
 				result = ::DefWindowProc(windowHandle, message, wParam, lParam);
 		}
@@ -33,11 +45,7 @@ namespace
 	{
 		RTR_ENGINE_TRACE("Start Win32CreateWindow");
 
-		const DWORD windowStyle = WS_OVERLAPPEDWINDOW;
-
-		// AdjustWindowRect computes based on the given windowStyle the size of the window border, when we create the window we have to add this values, otherwise the created window will be too small.
-		RECT windowBorderRect = {};
-		::AdjustWindowRectEx(&windowBorderRect, windowStyle, FALSE, 0);
+		const DWORD windowStyle = WS_OVERLAPPEDWINDOW | WS_VISIBLE;
 
 		HMODULE instance = ::GetModuleHandle(nullptr);
 
@@ -62,11 +70,9 @@ namespace
 			windowDefinition.Title.c_str(),
 			windowStyle,
 			0, 0,
-			windowDefinition.Width + (windowBorderRect.right - windowBorderRect.left),
-			windowDefinition.Height + (windowBorderRect.bottom - windowBorderRect.top),
+			windowDefinition.Width,
+			windowDefinition.Height,
 			nullptr, nullptr, instance, nullptr);
-
-		::ShowWindow(handle, SW_SHOWDEFAULT);
 
 		RTR_ENGINE_TRACE("Finished Win32CreateWindow");
 		return handle;
@@ -78,10 +84,19 @@ namespace rtr
 	Win32Window::Win32Window(const WindowDefinition& windowDefinition)
 		: mDefinition(windowDefinition)
 		, mHandle(::Win32CreateWindow(windowDefinition))
+		, mClientWidth(0u)
+		, mClientHeight(0u)
 	{
+		RECT clientRect = {};
+		if (::GetClientRect(mHandle, &clientRect))
+		{
+			mClientWidth = clientRect.right - clientRect.left;
+			mClientHeight = clientRect.bottom - clientRect.top;
+		}
+
 		// Todo (Marcus): Assert if handle == nullptr
 	}
-
+	
 	Win32Window::~Win32Window()
 	{
 		::DestroyWindow(mHandle);
@@ -106,6 +121,23 @@ namespace rtr
 
 			::TranslateMessage(&message);
 			::DispatchMessage(&message);
+		}
+	}
+
+	void Win32Window::OnResize()
+	{
+		RECT windowRect = {};
+		if (::GetWindowRect(mHandle, &windowRect))
+		{
+			mDefinition.Width = windowRect.right - windowRect.left;
+			mDefinition.Height = windowRect.bottom - windowRect.top;
+		}
+
+		RECT clientRect = {};
+		if (::GetClientRect(mHandle, &clientRect))
+		{
+			mClientWidth = clientRect.right - clientRect.left;
+			mClientHeight = clientRect.bottom - clientRect.top;
 		}
 	}
 

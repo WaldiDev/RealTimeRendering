@@ -15,13 +15,22 @@ namespace rtr
 	
 		virtual void OnUpdate() override;
 		
-		virtual unsigned int GetWidth() const override { return mDefinition.Width; }
-		virtual unsigned int GetHeight() const override { return mDefinition.Height; }
+		virtual void OnResize() override;
+
+		virtual unsigned int GetWindowWidth() const override { return mDefinition.Width; }
+		virtual unsigned int GetWindowHeight() const override { return mDefinition.Height; }
+		
+		virtual unsigned int GetClientWidth() const override { return mClientWidth; }
+		virtual unsigned int GetClientHeight() const override { return mClientHeight; }
+
 		virtual void* GetNativeWindow() const override { return mHandle; }
 
 	private:
 		WindowDefinition mDefinition;
 		
 		HWND mHandle;
+
+		unsigned int mClientWidth;
+		unsigned int mClientHeight;
 	};
 }

@@ -2,6 +2,7 @@
 #include "DirectX11.h"
 #include "Core/Window.h"
 #include "Core/Logging/Log.h"
+#include "D3D11Viewport.h"
 
 namespace
 {
@@ -19,7 +20,7 @@ namespace
 		UINT deviceFlags = 0;
 #ifdef RTR_DEBUG
 		deviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
-#endif		
+#endif
 
 		ID3D11DeviceContext* deviceContext = nullptr;
 		result = D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, deviceFlags, featureLevels, 1, D3D11_SDK_VERSION, device, &usedFeatureLevel, &deviceContext);
@@ -42,7 +43,7 @@ namespace
 		return true;
 	}
 
-	bool CreateSpawnChain(ID3D11Device* device, const rtr::Window& window, IDXGISwapChain1** swapChain1)
+	bool CreateSpawnChain(ID3D11Device* device, const rtr::Window& window, UINT swapChainFlags, IDXGISwapChain1** swapChain1)
 	{
 		RTR_ENGINE_TRACE("Start CreateSpawnChain");
 
@@ -58,13 +59,15 @@ namespace
 		result = dxgiAdapter->GetParent(IID_PPV_ARGS(&dxgiFactory));
 
 		DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
-		swapChainDesc.Width					= window.GetWidth();
-		swapChainDesc.Height				= window.GetHeight();
-		swapChainDesc.Format				= DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+		swapChainDesc.Width					= window.GetClientWidth();
+		swapChainDesc.Height				= window.GetClientHeight();
+		swapChainDesc.Format				= DXGI_FORMAT_R8G8B8A8_UNORM;
 		swapChainDesc.SampleDesc.Count		= 1;
 		swapChainDesc.SampleDesc.Quality	= 0;
 		swapChainDesc.BufferUsage			= DXGI_USAGE_RENDER_TARGET_OUTPUT;
 		swapChainDesc.BufferCount			= 2;
+		swapChainDesc.SwapEffect			= DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
+		swapChainDesc.Flags					= swapChainFlags;
 
 		result = dxgiFactory->CreateSwapChainForHwnd(device, static_cast<HWND>(window.GetNativeWindow()), &swapChainDesc, nullptr, nullptr, swapChain1);
 
@@ -139,6 +142,31 @@ namespace
 		return true;
 	}
 #endif // RTR_DEBUG
+
+	bool CheckForTearingSupport()
+	{
+		// Rather than create the 1.5 factory interface directly, we create the 1.4 interface and query for the 1.5 interface. This will enable the graphics debugging tools which might not support the 1.5 factory interface.
+		IDXGIFactory4* dxgiFactory4 = nullptr;
+		if (FAILED(CreateDXGIFactory1(IID_PPV_ARGS(&dxgiFactory4))))
+		{
+			return false;
+		}
+
+		IDXGIFactory5* dxgiFactory5 = nullptr;
+		if (FAILED(dxgiFactory4->QueryInterface(IID_PPV_ARGS(&dxgiFactory5))))
+		{
+			dxgiFactory4->Release();
+			return false;
+		}
+
+		BOOL allowTearing = FALSE;
+		HRESULT result = dxgiFactory5->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING, &allowTearing, sizeof(allowTearing));
+		
+		dxgiFactory5->Release();
+		dxgiFactory4->Release();
+
+		return SUCCEEDED(result) && allowTearing;
+	}
 }
 
 namespace rtr
@@ -150,10 +178,11 @@ namespace rtr
 
 	D3D11Video::D3D11Video(const Window& window)
 		: mWindow(window)
+		, mVSyncEnabled(true)
+		, mTearingSupport(::CheckForTearingSupport())
 		, mDevice(nullptr)
-		, mDeviceContext1(nullptr)
-		, mSwapChain1(nullptr)
-		, mBackBuffer(nullptr)
+		, mDeviceContext(nullptr)
+		, mViewport(nullptr)
 		, mBlendState(nullptr)
 		, mClearColor{ 0.1f, 0.1f, 0.1f, 1.0f }
 #ifdef RTR_DEBUG
@@ -161,7 +190,7 @@ namespace rtr
 		, mInfoQueue(nullptr)
 #endif // RTR_DEBUG
 	{
-		if (!::CreateDeviceAndContext(&mDevice, &mDeviceContext1))
+		if (!::CreateDeviceAndContext(&mDevice, &mDeviceContext))
 		{
 			assert(true);
 			return;
@@ -173,27 +202,16 @@ namespace rtr
 		}
 #endif // RTR_DEBUG
 
-		if (!::CreateSpawnChain(mDevice, mWindow, &mSwapChain1))
-		{
-			assert(true);
-			return;
-		}
-
-		if (!::CreateBackBuffer(mDevice, mSwapChain1, &mBackBuffer))
-		{
-			assert(true);
-			return;
-		}
+		mViewport = new D3D11Viewport(mDevice, window);
 	}
 
 	D3D11Video::~D3D11Video()
 	{
-		SAFE_RELEASE(mBackBuffer);
-		SAFE_RELEASE(mSwapChain1);
+		delete mViewport;
 
-		mDeviceContext1->ClearState();
-		mDeviceContext1->Flush();
-		SAFE_RELEASE(mDeviceContext1);
+		mDeviceContext->ClearState();
+		mDeviceContext->Flush();
+		SAFE_RELEASE(mDeviceContext);
 
 #ifdef RTR_DEBUG
 		SAFE_RELEASE(mInfoQueue);
@@ -204,15 +222,29 @@ namespace rtr
 		SAFE_RELEASE(mDevice);
 	}
 
+	void D3D11Video::OnResize(uint32_t width, uint32_t height)
+	{
+		mDeviceContext->OMSetRenderTargets(0, nullptr, nullptr);
+		mViewport->Resize(mDevice, width, height);
+	}
+
 	void D3D11Video::BeginRender()
 	{
+		/*RECT clientRect = {}
+		::GetClientRect(static_cast<HWND>(window.GetNativeWindow()), &clientRect);
+
+		if ((clientRect.right - clientRect.left) != Window.GetClientWidth() || (clientRect.bottom - clientRect.top) != Window.GetClientHeight())
+		{
+			mSwapChain1->ResizeBuffers(2, (clientRect.right - clientRect.left), )
+		}*/
+
 		// Clear the back buffer.
-		mDeviceContext1->OMSetRenderTargets(1, &mBackBuffer, NULL);
-		mDeviceContext1->ClearRenderTargetView(mBackBuffer, mClearColor);
+		mDeviceContext->OMSetRenderTargets(1, &mViewport->mRenderTargetView, NULL);
+		mDeviceContext->ClearRenderTargetView(mViewport->mRenderTargetView, mClearColor);
 	}
 
 	void D3D11Video::EndRender()
 	{
-		mSwapChain1->Present(1, 0);
+		mViewport->Present(mVSyncEnabled);
 	}
 }

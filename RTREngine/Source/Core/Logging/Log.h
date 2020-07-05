@@ -34,4 +34,4 @@ namespace rtr
 #define RTR_FATAL(...) ::rtr::Log::GetGameLogger()->fatal(__VA_ARGS__)
 
 #define RTR_PRINT_RESULT(result) (result < 0) ? RTR_ENGINE_ERROR(rtr::Log::GetErrorMessageForResultCode(result)) : RTR_ENGINE_ERROR(rtr::Log::GetErrorMessageForResultCode(result))
-#define RTR_PRINT_RESULT_WITH_MESSAGE(message, result) (result < 0) ? RTR_ENGINE_ERROR("{0}:{1}", message, rtr::Log::GetErrorMessageForResultCode(result)) : RTR_ENGINE_INFO("{0}:{1}", message, rtr::Log::GetErrorMessageForResultCode(result))
+#define RTR_PRINT_RESULT_WITH_MESSAGE(message, result) (result < 0) ? RTR_ENGINE_ERROR("{0}: {1}", message, rtr::Log::GetErrorMessageForResultCode(result)) : RTR_ENGINE_INFO("{0}:{1}", message, rtr::Log::GetErrorMessageForResultCode(result))

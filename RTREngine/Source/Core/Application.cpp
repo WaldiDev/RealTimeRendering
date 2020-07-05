@@ -61,4 +61,14 @@ namespace rtr
 	{
 		mLayerStack.PushOverlay(layer);
 	}
+
+	void Application::Resize(uint32_t width, uint32_t height)
+	{
+		if (mVideo && width > 0u && height > 0u)
+		{
+			mWindow->OnResize();
+			mVideo->OnResize(width, height);
+		}
+	}
+
 }

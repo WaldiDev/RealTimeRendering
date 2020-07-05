@@ -1,4 +1,5 @@
 #pragma once
+#include "stdint.h"
 
 namespace rtr
 {
@@ -8,6 +9,8 @@ namespace rtr
 	{
 	public:
 		virtual ~Video() {}
+
+		virtual void OnResize(uint32_t width, uint32_t height) = 0;
 
 		virtual void BeginRender() = 0;
 		virtual void EndRender() = 0;

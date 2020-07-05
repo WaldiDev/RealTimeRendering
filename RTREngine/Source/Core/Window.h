@@ -29,9 +29,13 @@ namespace rtr
 		virtual ~Window() {}
 
 		virtual void OnUpdate() = 0;
+		virtual void OnResize() = 0;
 
-		virtual unsigned int GetWidth() const = 0;
-		virtual unsigned int GetHeight() const = 0;
+		virtual unsigned int GetWindowWidth() const = 0;
+		virtual unsigned int GetWindowHeight() const = 0;
+
+		virtual unsigned int GetClientWidth() const = 0;
+		virtual unsigned int GetClientHeight() const = 0;
 
 		virtual void* GetNativeWindow() const = 0;
 
