@@ -37,12 +37,25 @@ namespace rtr
 
 		ImGui::ShowDemoWindow();
 
-		ImGui::Render();
+		
 	}
 
 	void ImguiLayer::End()
 	{
+		ImGui::Render();
 		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+
+		Application& app = Application::Get();
+		const Window& window = app.GetWindow();
+
+		ImGuiIO& io = ImGui::GetIO();
+		io.DisplaySize = ImVec2(window.GetClientWidth(), window.GetClientHeight());
+
+		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+		{
+			ImGui::UpdatePlatformWindows();
+			ImGui::RenderPlatformWindowsDefault();
+		}
 	}
 
 	void ImguiLayer::OnAttach()
@@ -52,6 +65,16 @@ namespace rtr
 
 		ImGui::StyleColorsDark();
 		ImGuiIO& io = ImGui::GetIO();
+
+		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+		io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+
+		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+		{
+			ImGuiStyle& style = ImGui::GetStyle();
+			style.WindowRounding = 0.0f;
+			style.Colors[ImGuiCol_WindowBg].w = 1.0f;
+		}
 
 		Application& app = Application::Get();
 		ImGui_ImplWin32_Init(app.GetWindow().GetNativeWindow());
